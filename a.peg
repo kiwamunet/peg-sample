@@ -1,0 +1,99 @@
+package main
+
+type Peg Peg {
+    Params map[string]interface{}
+    CropParams map[string]interface{}
+}
+
+
+Expression          <- (
+                            ( Delimiter Width ) /
+                            ( Delimiter Height ) /
+                            ( Delimiter Quality ) /
+                            ( Delimiter Format ) /
+                            ( Delimiter Crop ) /
+                            ( Delimiter Fit ) /
+                            ( Delimiter Scale ) /
+                            ( Delimiter Reverse ) /
+                            ( Delimiter Progressive ) /
+                            ( Delimiter Exif ) /
+                            ( Delimiter SkipParam ) /
+                            Delimiter
+                        )+ EOF
+
+
+
+Format              <- Format_Key       Separater < LowerCase > ( &And / EOF )              { p.AddParam("format", text) }
+Progressive         <- Progressive_Key  Separater < Bool > ( &And / EOF )                   { p.AddParam("progressive", text) }
+Width               <- Width_Key        Separater < ( Digit / Dot )+ > ( &And / EOF )       { p.AddParam("width", text) }
+Height              <- Height_Key       Separater < ( Digit / Dot )+ > ( &And / EOF )       { p.AddParam("height", text) }
+Fit                 <- Fit_Key          Separater < FitParam > ( &And / EOF )               { p.AddParam("fit", text) }
+Scale               <- Scale_Key        Separater < ( Digit / Dot )+ > ( &And / EOF )       { p.AddParam("scale", text) }
+Reverse             <- Reverse_Key      Separater < ReverseParam > ( &And / EOF )           { p.AddParam("reverse", text) }
+Crop                <- Crop_Key         CropSub_P ( &And / EOF )
+    CropSub_P               <- Open CropSub_Set+ Close
+    CropSub_Set             <- Separater?   ( CropSub_Key_Width / CropSub_Key_Height / CropSub_Key_X / CropSub_Key_Y )
+    CropSub_Key_Width       <- Width_Key    Separater? < ( Digit / Dot )+ >                 { p.AddCropSubParam("crop", "width", text) }
+    CropSub_Key_Height      <- Height_Key   Separater? < ( Digit / Dot )+ >                 { p.AddCropSubParam("crop", "height", text) }
+    CropSub_Key_X           <- 'x'          Separater? < ( Digit / Dot )+ >                 { p.AddCropSubParam("crop", "x", text) }
+    CropSub_Key_Y           <- 'y'          Separater? < ( Digit / Dot )+ >                 { p.AddCropSubParam("crop", "y", text) }
+Quality             <- Quality_Key      Separater < ( Digit / Dot )+ > ( &And / EOF )       { p.AddParam("quality", text) }
+Exif                <- Exif_Key      Separater < Bool > ( &And / EOF )                    { p.AddParam("exif", text) }
+
+SkipParam           <- < All ( &And / EOF ) > { p.SkipParam(text) }
+
+
+
+
+
+
+
+##########################
+#### Syntax
+##########################
+Separater           <- ( Equal / Dot / Haihun / Comma )
+Delimiter           <- ( Question / And )
+
+
+Bool                <- ( 'true' / 'false' )
+FitParam            <- ( 'clip' / 'scale' / 'max' / 'crop' )
+ReverseParam        <- ( 'flip' / 'flop' )
+Open                <- ( Open_P / Open_B / Open_Box )
+Close               <- ( Close_P / Close_B / Close_Box )
+
+Digit               <- [0-9]+
+LowerCase           <- [a-z]+
+All                 <- [a-zA-Z0-9_*{}(),:;%#=/.\-+]+
+
+
+##########################
+#### Paramaters_Key
+##########################
+Format_Key          <- ( 'format' )
+Progressive_Key     <- ( 'progressive' )
+Width_Key           <- ( 'width' / 'w' )
+Height_Key          <- ( 'height' / 'h' )
+Fit_Key             <- ( 'fit' )
+Scale_Key           <- ( 'scale' )
+Reverse_Key         <- ( 'reverse' )
+Crop_Key            <- ( 'crop' )
+Quality_Key         <- ( 'quality' / 'q' )
+Exif_Key            <- ( 'exif' )
+
+
+##########################
+#### Elements
+##########################
+Equal               <- '='
+Question            <- '?'
+And	                <- '&'
+Dot                 <- '.'
+Comma               <- ','
+Haihun              <- '-'
+Open_P		        <- '('
+Close_P		        <- ')'
+Open_B		        <- '{'
+Close_B		        <- '}'
+Open_Box	        <- '['
+Close_Box		    <- ']'
+EOF                 <- !.
